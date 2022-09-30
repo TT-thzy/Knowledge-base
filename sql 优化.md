@@ -1,14 +1,4 @@
-## 前言
 
-sql优化是一个大家都比较关注的热门话题，无论你在面试，还是工作中，都很有可能会遇到。
-
-如果某天你负责的某个线上接口，出现了性能问题，需要做优化。那么你首先想到的很有可能是优化sql语句，因为它的改造成本相对于代码来说也要小得多。
-
-那么，如何优化sql语句呢？
-
-这篇文章从15个方面，分享了sql优化的一些小技巧，希望对你有所帮助。
-
-![图片](https://mmbiz.qpic.cn/mmbiz_png/uL371281oDEU1Oia130N2IFx8rmOZ0srhia0ZuRo37mU5cwXLjKbUTqWwNP43CVkAzJQLjMAApRIf14B3LJXF7kA/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
 
 ## 1 避免使用select *
 

@@ -505,4 +505,3 @@ explain select * from `order` where code='002';
 
 必要时可以使用`force index`来强制查询sql走某个索引。
 
-至于为什么mysql会选错索引，后面有专门的文章介绍的，这里先留点悬念。

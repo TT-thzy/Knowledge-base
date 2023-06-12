@@ -113,7 +113,6 @@ Futures.addCallback(future1And2, new FutureCallback<List<String>>() {
             }
         }, guavaExecutor);
     }
-
     @Override
     public void onFailure(Throwable t) {
     }}, guavaExecutor);

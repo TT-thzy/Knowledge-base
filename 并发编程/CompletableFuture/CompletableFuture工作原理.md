@@ -15,7 +15,7 @@ CompletableFuture中主要维护了两个成员变量:
 
 CompletableFuture.Completion类体系:
 
-<img src="file:///E:/user%20document/Personal-Knowledge-base/picture%20service/completableFuture/Completion类图.png" title="" alt="" data-align="center">
+<img src="https://github.com/TT-thzy/notes-tt/tree/company/picture%20service/completableFuture/Completion类图.png" title="" alt="" data-align="center">
 
 CompletableFuture.Completion的类结构:
 
@@ -66,11 +66,11 @@ public static void main(String[] args) {
 
 1. 上面的代码我们通过创建一个简单的CompletableFuture对象，再执行baseFuture.thenApply()调用后会进行一个入栈操作，如下图baseFuture引用的CompletableFuture的stack属性将会指向baseFuture.thenApply()结果返回的新CompletableFuture对象，而新CompletableFuture对象的src属性将指向来源CompletableFuture即baseFuture所引用的对象。
 
-<img src="file:///E:/user%20document/Personal-Knowledge-base/picture%20service/completableFuture/1.png" title="" alt="" data-align="center">
+<img src="https://github.com/TT-thzy/notes-tt/tree/company/picture%20service/completableFuture/1.png" title="" alt="" data-align="center">
 
 2. 在上一步的基础上再执行下一行代码，结果的引用关系图如下图：
 
-<img src="file:///E:/user%20document/Personal-Knowledge-base/picture%20service/completableFuture/2.png" title="" alt="" data-align="center">
+<img src="https://github.com/TT-thzy/notes-tt/tree/company/picture%20service/completableFuture/2.png" title="" alt="" data-align="center">
 
 在执行完baseFuture.thenAccept()的时候，thenAccept返回的任务将被压入栈顶，next指向上一个代码段的返回对象。在thenAccept返回的新CompletableFuture对象中再进行一次thenAccept的调用，就再产生一个新的CompletableFuture对象，dept属性就指向最新的CompletableFuture对象。
 

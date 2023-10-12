@@ -7,7 +7,9 @@
 ## code
 
 ### 前置
+
 常量（测试用）
+
 ```java
 public interface ArithmeticMessage {
 
@@ -17,7 +19,9 @@ public interface ArithmeticMessage {
     String divide="divide Strategy";
 }
 ```
+
 策略类型
+
 ```java
 public enum StrategyEnum {
 
@@ -49,8 +53,11 @@ public enum StrategyEnum {
 
 }
 ```
+
 ### 策略
+
 运算策略上层接口
+
 ```java
 public interface ArithmeticService {
 
@@ -66,7 +73,9 @@ public interface ArithmeticService {
      */
     String getStrategy();
 ```
+
 加法策略
+
 ```java
 @Service
 public class AddService implements ArithmeticService{
@@ -81,7 +90,9 @@ public class AddService implements ArithmeticService{
 
 }
 ```
+
 减法策略
+
 ```java
 @Service
 public class SubtractService implements ArithmeticService{
@@ -95,7 +106,9 @@ public class SubtractService implements ArithmeticService{
     }
 }
 ```
+
 乘法策略
+
 ```java
 @Service
 public class MultiplyService implements ArithmeticService{
@@ -108,7 +121,9 @@ public class MultiplyService implements ArithmeticService{
     }
 }
 ```
+
 除法策略
+
 ```java
 @Service
 public class DivideService implements ArithmeticService{
@@ -121,8 +136,11 @@ public class DivideService implements ArithmeticService{
     }
 }
 ```
+
 ### 内核
+
 核心类（简单工厂的变相 <font color="red"> maybe </font>）
+
 ```java
 @Component
 public class StrategyManage implements InitializingBean, ApplicationContextAware {
@@ -162,8 +180,11 @@ public class StrategyManage implements InitializingBean, ApplicationContextAware
     }
 }
 ```
+
 ### 测试
+
 Test
+
 ```java
 @SpringBootTest
 public class StrategyTest {
@@ -177,7 +198,41 @@ public class StrategyTest {
     }
 }
 ```
+
 Result
 
 ![image-20220507154310705](/Users/xiaotan/Library/Application Support/typora-user-images/image-20220507154310705.png)
 
+### 抽象
+上方的StrategyManage工厂类可以看到其实就是维护了一个容器，对外提供获取策略的方法和初始化数据的方法，那么可以向上抽象出一个抽象工厂:
+```java
+public abstract class AbstractStrategyFactory<T> implements InitializingBean, ApplicationContextAware {
+
+    private ConcurrentHashMap<String, T> factory = new ConcurrentHashMap();
+
+    protected ApplicationContext context;
+
+    public T getStrategy(String strategy) {
+        return factory.get(strategy);
+    }
+
+    protected void addStrategy(String strategy, T strategyBean) {
+        factory.put(strategy, strategyBean);
+    }
+
+    /**
+     * 向factory中填充策略
+     */
+    public abstract void fillStrategy();
+
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        this.fillStrategy();
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.context = applicationContext;
+    }
+```

@@ -4,5 +4,5 @@
 
 note:
 
-* markdown中用 **../ **表示上次目录
+* markdown中用 ../ 表示上级目录
 

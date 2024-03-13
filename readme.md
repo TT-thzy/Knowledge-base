@@ -1,4 +1,4 @@
-<img src="dog.png"></img>
+<img src="dog.PNG"></img>
 
 
 note:

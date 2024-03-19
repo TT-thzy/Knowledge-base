@@ -350,7 +350,9 @@ System.out.println(parser.parseExpression("#user?.car?.toString()").getValue(con
 ```
 
 ###### 对象方法调用
+
 对象方法调用更简单，跟Java语法一样；如“'haha'.substring(2,4)”将返回“ha”；而对于根对象可以直接调用方法；
+
 ```java
 System.out.println(parser.parseExpression("'abcdefg'.substring(1,3)").getValue(String.class)); //bc
 Car car = new Car();
@@ -361,7 +363,9 @@ System.out.println(parser.parseExpression("toString()").getValue(context, String
 ```
 
 ###### Bean引用
+
 SpEL支持使用“@”符号来引用Bean，在引用Bean时需要使用BeanResolver接口实现来查找Bean，Spring提供BeanFactoryResolver实现。
+
 ```java
 DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
 User user = new User();
@@ -379,8 +383,285 @@ System.out.println(userBean == factory.getBean("user")); //true
 
 #### 集合相关表达式
 
-#### 其他表达式
+##### 内联list
+
+从Spring3.0.4开始支持内联List，使用{表达式，……}定义内联List，如“{1,2,3}”将返回一个整型的ArrayList，而“{}”将返回空的List，对于字面量表达式列表，SpEL会使用java.util.Collections.unmodifiableList方法将列表设置为不可修改。
+
+```java
+ExpressionParser parser = new SpelExpressionParser();
+//将返回不可修改的空List
+List<Integer> result2 = parser.parseExpression("{}").getValue(List.class);
+//对于字面量列表也将返回不可修改的List
+List<Integer> result1 = parser.parseExpression("{1,2,3}").getValue(List.class);
+Assertions.assertEquals(new Integer(1), result1.get(0));
+try {
+    result1.set(0, 2);
+} catch (Exception e) {
+    e.printStackTrace();  //java.lang.UnsupportedOperationException
+}
+//对于列表中只要有一个不是字面量表达式，将只返回原始List，
+//不会进行不可修改处理
+String expression3 = "{{1+2,2+4},{3,4+4}}";
+List<List<Integer>> result3 = parser.parseExpression(expression3).getValue(List.class);
+result3.get(0).set(0, 1);
+System.out.println(result3); //[[1, 6], [3, 8]]
+//声明一维数组并初始化
+int[] result4 = parser.parseExpression("new int[2]{1,2}").getValue(int[].class);
+System.out.println(result4[1]); //2
+//定义一维数组无初始化
+int[] result5 = parser.parseExpression("new int[1]").getValue(int[].class);
+System.out.println(result5[0]); //0
+```
+
+##### 集合，字典元素访问
+
+SpEL目前支持所有集合类型和字典类型的元素访问，使用“集合[索引]”访问集合元素，使用“map[key]”访问字典元素；
+
+```java
+//SpEL内联List访问
+int result1 = parser.parseExpression("{1,2,3}[0]").getValue(int.class);
+System.out.println(result1);  //1
+//SpEL目前支持所有集合类型的访问
+Collection<Integer> collection = new HashSet<Integer>();
+collection.add(1);
+collection.add(2);
+EvaluationContext context2 = new StandardEvaluationContext();
+context2.setVariable("collection", collection);
+int result2 = parser.parseExpression("#collection[1]").getValue(context2, int.class);
+System.out.println(result2); //2
+//SpEL对Map字典元素访问的支持
+Map<String, Integer> map = new HashMap<String, Integer>();
+map.put("a", 1);
+EvaluationContext context3 = new StandardEvaluationContext();
+context3.setVariable("map", map);
+int result3 = parser.parseExpression("#map['a']").getValue(context3, int.class);
+System.out.println(result3);  //1
+```
+
+##### 列表，字典，数组元素修改
+
+可以使用赋值表达式或Expression接口的setValue方法修改；
+
+```java
+ //修改list元素值
+List<Integer> list = new ArrayList<Integer>();
+list.add(1);
+list.add(2);
+EvaluationContext context1 = new StandardEvaluationContext();
+context1.setVariable("collection", list);
+parser.parseExpression("#collection[1]").setValue(context1, 4);
+int result1 = parser.parseExpression("#collection[1]").getValue(context1, int.class);
+System.out.println(result1);  //4
+//修改map元素值
+Map<String, Integer> map = new HashMap<String, Integer>();
+map.put("a", 1);
+EvaluationContext context2 = new StandardEvaluationContext();
+context2.setVariable("map", map);
+parser.parseExpression("#map['a']").setValue(context2, 4);
+Integer result2 = parser.parseExpression("#map['a']").getValue(context2, int.class);
+System.out.println(result2);   //4
+```
+
+##### 集合投影
+
+在SQL中投影指从表中选择出列，而在SpEL指根据集合中的元素中通过选择来构造另一个集合，该集合和原集合具有相同数量的元素；SpEL使用“（list|map）.![投影表达式]”来进行投影运算：
+
+```java
+//1.测试集合或数组
+List<Integer> list = new ArrayList<Integer>();
+list.add(4);
+list.add(5);
+EvaluationContext context1 = new StandardEvaluationContext();
+context1.setVariable("list", list);
+Collection<Integer> result1 = parser.parseExpression("#list.![#this+1]").getValue(context1, Collection.class);
+result1.forEach(System.out::println);  // 5 6
+System.out.println("------------");
+//2.测试字典
+Map<String, Integer> map = new HashMap<String, Integer>();
+map.put("a", 1);
+map.put("b", 2);
+EvaluationContext context2 = new StandardEvaluationContext();
+context2.setVariable("map", map);
+List<Integer> result2 = parser.parseExpression("#map.![value+1]").getValue(context2, List.class);
+result2.forEach(System.out::println);  //2, 3
+```
+
+对于集合或数组使用如上表达式进行投影运算，其中投影表达式中“#this”代表每个集合或数组元素，可以使用比如“#this.property”来获取集合元素的属性，其中“#this”可以省略。
+
+Map投影最终只能得到List结果，如上所示，对于投影表达式中的“#this”将是Map.Entry，所以可以使用“value”来获取值，使用“key”来获取键。
+
+##### 集合选择
+
+在SQL中指使用select进行选择行数据，而在SpEL指根据原集合通过条件表达式选择出满足条件的元素并构造为新的集合，SpEL使用“(list|map).?[选择表达式]”，其中选择表达式结果必须是boolean类型，如果true则选择的元素将添加到新集合中，false将不添加到新集合中。
+
+```java
+List<Integer> list = new ArrayList<Integer>();
+list.add(1);
+list.add(4);
+list.add(5);
+list.add(7);
+EvaluationContext context1 = new StandardEvaluationContext();
+context1.setVariable("list", list);q
+Collection<Integer> result1 = parser.parseExpression("#list.?[#this>4]").getValue(context1, Collection.class);
+result1.forEach(System.out::println);  //5 7
+System.out.println("--------------------");
+Map<String, Integer> map = new HashMap<String, Integer>();
+map.put("a", 1);
+map.put("b", 2);
+map.put("c", 3);
+EvaluationContext context2 = new StandardEvaluationContext();
+context2.setVariable("map", map);
+Map<String, Integer> result2 = parser.parseExpression("#map.?[key!='a']").getValue(context2, Map.class);
+result2.forEach((key, value) -> {
+    System.out.println(key + ":" + value);  //b:2  c:3
+});
+System.out.println("------------");
+List<Integer> result3 = parser.parseExpression("#map.?[key!='a'].![value+1]").getValue(context2, List.class);
+result3.forEach(System.out::println);   //3  4
+```
+
+对于集合或数组选择，如“#collection.?[#this>4]”将选择出集合元素值大于4的所有元素。选择表达式必须返回布尔类型，使用“#this”表示当前元素。
+
+对于字典选择，如“#map.?[#this.key != 'a']”将选择键值不等于”a”的，其中选择表达式中“#this”是Map.Entry类型，而最终结果还是Map，这点和投影不同；集合选择和投影可以一起使用，如“#map.?[key != 'a'].![value+1]”将首先选择键值不等于”a”的，然后在选出的Map中再进行“value+1”的投影。
 
 #### 在bean定义中使用spel表达式
 
-## 总结
+##### xml风格的配置
+
+SpEL支持在Bean定义时注入，默认使用“#{SpEL表达式}”表示，其中“#root”根对象默认可以认为是ApplicationContext，只有ApplicationContext实现默认支持SpEL，获取根对象属性其实是获取[容器](https://cloud.tencent.com/product/tke?from_column=20065&from=20065)中的Bean。
+
+如：
+
+```javascript
+<bean id="world" class="java.lang.String">  
+    <constructor-arg value="#{' World!'}"/>  
+</bean>  
+
+<bean id="hello1" class="java.lang.String">  
+    <constructor-arg value="#{'Hello'}#{world}"/>  
+</bean>    
+
+<bean id="hello2" class="java.lang.String">  
+    <constructor-arg value="#{'Hello' + world}"/>
+</bean>  
+
+<bean id="hello3" class="java.lang.String">  
+    <constructor-arg value="#{'Hello' + @world}"/>  
+</bean>
+```
+
+模板默认以前缀“#{”开头，以后缀“}”结尾，且不允许嵌套，如“#{'Hello'#{world}}”错误，如“#{'Hello' + world}”中“world”默认解析为Bean。当然可以使用“@bean”引用了。
+
+是不是很简单，除了XML配置方式，Spring还提供一种注解方式@Value，接着往下看吧。
+
+##### 注解风格的配置
+
+基于注解风格的SpEL配置也非常简单，使用@Value注解来指定SpEL表达式，该注解可以放到字段、方法及方法参数上。
+
+测试Bean类如下，使用@Value来指定SpEL表达式：
+
+```javascript
+public class SpELBean {  
+    @Value("#{'Hello' + world}")  
+    private String value;  
+}
+```
+
+##### 在Bean定义中SpEL的问题
+
+如果有同学问“#{我不是SpEL表达式}”不是SpEL表达式，而是公司内部的模板，想换个前缀和后缀该如何实现呢？
+
+我们使用BeanFactoryPostProcessor接口提供postProcessBeanFactory回调方法，它是在IoC容器创建好但还未进行任何Bean初始化时被ApplicationContext实现调用，因此在这个阶段把SpEL前缀及后缀修改掉是安全的，具体代码如下：
+
+```javascript
+package com.javacode2018.spel.test1;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanExpressionResolver;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.expression.StandardBeanExpressionResolver;
+import org.springframework.stereotype.Component;
+
+@Component
+public class SpelBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        BeanExpressionResolver beanExpressionResolver = beanFactory.getBeanExpressionResolver();
+        if (beanExpressionResolver instanceof StandardBeanExpressionResolver) {
+            StandardBeanExpressionResolver resolver = (StandardBeanExpressionResolver) beanExpressionResolver;
+            resolver.setExpressionPrefix("%{");
+            resolver.setExpressionSuffix("}");
+        }
+    }
+}
+```
+
+上测试代码
+
+```javascript
+package com.javacode2018.spel.test1;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public class LessonModel {
+    @Value("%{@name},%{@msg}")
+    private String desc;
+
+    @Override
+    public String toString() {
+        return "LessonModel{" +
+                "desc='" + desc + '\'' +
+                '}';
+    }
+}
+```
+
+@name：容器中name的bean
+
+@msg：容器中msg的bean
+
+下面我们来个配置类，顺便定义name和msg这2个bean，顺便扫描上面2个配置类
+
+```javascript
+package com.javacode2018.spel.test1;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+
+@ComponentScan
+@Configuration
+public class MainConfig {
+    @Bean
+    public String name() {
+        return "牛逼";
+    }
+
+    @Bean
+    public String msg() {
+        return "你好！";
+    }
+}
+```
+
+测试用例
+
+```javascript
+@Test
+public void test12() {
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+    context.register(MainConfig.class);
+    context.refresh();
+    LessonModel lessonModel = context.getBean(LessonModel.class);
+    System.out.println(lessonModel);
+}
+```
+
+运行输出
+
+```javascript
+LessonModel{desc='牛逼, 你好！'}
+```

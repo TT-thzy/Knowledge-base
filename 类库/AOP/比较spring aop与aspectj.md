@@ -25,7 +25,7 @@
 
 #### Capabilities and Goals
 
-简而言之，Spring AOP和AspectJ有不同的目标。Spring AOP旨在通过Spring IoC提供一个简单的AOP实现，以解决编码人员面临的最常出现的问题。这并不是完整的AOP解决方案，它只能用于**Spring容器管理的beans**。另一方面，AspectJ是最原始的AOP实现技术，提供了玩这个的AOP解决方案。AspectJ更为健壮，相对于Spring AOP也显得更为复杂。值得注意的是，AspectJ能够被应用于**所有的领域对象**。
+简而言之，Spring AOP和AspectJ有不同的目标。Spring AOP旨在通过Spring IoC提供一个简单的AOP实现，以解决编码人员面临的最常出现的问题。这并不是完整的AOP解决方案，它只能用于**Spring容器管理的beans**。另一方面，AspectJ是最原始的AOP实现技术，提供了玩这个的AOP解决方案。AspectJ更为健壮，相对于Spring AOP也显得更为复杂。值得注意的是，AspectJ能够被应用于**所有的领域对象**。在Spring 2.0使用了和AspectJ 5一样的注解，并使用AspectJ来做切入点解析和匹配。但是，AOP在运行时仍旧是纯的Spring AOP，并不依赖于AspectJ的编译器或者织入器(weaver)。
 
 #### Weaving
 

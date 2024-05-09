@@ -3,3 +3,5 @@ RestfulTool
 Translation
 maven helper
 search in repository
+Arthas Idea
+jclasslib Bytecode Viewer

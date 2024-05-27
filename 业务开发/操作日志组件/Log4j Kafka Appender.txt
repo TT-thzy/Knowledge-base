@@ -1,0 +1,3 @@
+官方文档: https://logging.apache.org/log4j/2.12.x/manual/appenders.html
+
+实操参考: https://www.devglan.com/apache-kafka/stream-log4j-logs-to-kafka

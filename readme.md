@@ -1,4 +1,3 @@
-<img src="dog.PNG"></img>
 
 note:
 

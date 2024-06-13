@@ -1,5 +1,12 @@
 ## 部署脚本学习
 
+`主要流程`
+1. git拉取最新代码
+2. maven打包
+3. kill掉项目之前版本的运行进程
+4. 将打包好的jar包复制到项目目录并覆盖之前的jar包
+5. 启动java程序
+
 ```shell
 #切换到项目路径
 cd /data/admin/code/{projectName}	 
@@ -16,9 +23,6 @@ git pull origin master
 #本地install并打包跳过test
 mvn clean install -DskipTests -U		
 
-#复制jar包至启动目录
-cp /data/admin/code/mizar-major/mizar-major-boot/target/{projectName}.jar /data/admin/target/{projectName}
-
 echo '开始启动';
 
 #kill原有进程
@@ -32,6 +36,9 @@ fi
 
 echo '睡眠10s';
 sleep 10s;
+
+#复制jar包至启动目录
+cp -f /data/admin/code/mizar-major/mizar-major-boot/target/{projectName}.jar /data/admin/target/{projectName}
 
 
 echo '启动java服务...'
